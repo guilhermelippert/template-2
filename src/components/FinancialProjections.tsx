@@ -6,19 +6,13 @@ import FinancialMetricsChart from './charts/FinancialMetricsChart';
 import ProjectionMetricsChart from './charts/ProjectionMetricsChart';
 import CustomerMetricsChart from './charts/CustomerMetricsChart';
 import { useProjections } from '@/lib/hooks/useProjections';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { calculateAggregatedMetrics } from "@/lib/utils/projectionCalculations";
 
 export default function FinancialProjections() {
   const { financialMetrics, projections } = useAnalytics();
   const { projections: projectionData, params, updateParams, error } = useProjections();
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  console.log("FinancialProjections - Renderizando com:", {
-    hasFinancialMetrics: !!financialMetrics,
-    financialMetrics,
-    hasProjections: projections.length > 0,
-    projectionsLength: projections.length
-  });
 
   // Calcular métricas agregadas
   const totalRevenue = projections.reduce((sum, p) => sum + p.revenue, 0);
@@ -26,12 +20,9 @@ export default function FinancialProjections() {
   const averageROI = projections.reduce((sum, p) => sum + p.roi, 0) / projections.length;
   const totalCustomers = projections[projections.length - 1]?.totalCustomers || 0;
 
-  console.log("FinancialProjections - Métricas agregadas calculadas:", {
-    totalRevenue,
-    totalCost,
-    averageROI,
-    totalCustomers
-  });
+  const aggregatedMetrics = useMemo(() => {
+    return calculateAggregatedMetrics(projections, financialMetrics);
+  }, [projections, financialMetrics]);
 
   if (error) {
     return (

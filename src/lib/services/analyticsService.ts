@@ -11,7 +11,6 @@ export class AnalyticsService {
       this.storeMetrics(metrics);
       return metrics;
     } catch (error) {
-      console.error('Erro ao processar métricas:', error);
       throw error;
     }
   }
@@ -58,7 +57,6 @@ export class AnalyticsService {
 
         // Garantir que a data é válida
         if (isNaN(purchaseDate.getTime())) {
-          console.error('Data inválida:', row.data_compra);
           return; // Pula este registro
         }
 
@@ -95,7 +93,6 @@ export class AnalyticsService {
         uniqueCustomers.add(customerKey);
         metrics.totalRevenue += purchaseValue;
       } catch (error) {
-        console.error('Erro ao processar data:', row.data_compra, error);
         return; // Pula este registro em caso de erro
       }
     });

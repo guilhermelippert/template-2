@@ -149,12 +149,10 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
   // Função para upload de dados
   const uploadData = (data: RawUploadData[]) => {
-    console.log("AnalyticsContext: Recebendo dados do upload", data.length, "registros");
     setRawData(data);
     // Resetar estados relacionados
     setColumnMapping(null);
     setDataValidation(null);
-    console.log("AnalyticsContext: Dados armazenados e estados resetados");
   };
 
   // Função para atualizar mapeamento de colunas
@@ -179,20 +177,11 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
   // Função para processar dados após validação
   const processData = () => {
-    console.log("AnalyticsContext - Iniciando processamento de dados");
-    
     if (!columnMapping || !rawData.length) {
-      console.log("AnalyticsContext - Processamento cancelado: dados insuficientes", {
-        hasColumnMapping: !!columnMapping,
-        rawDataLength: rawData.length
-      });
       return;
     }
 
     try {
-      // Aqui vamos implementar a lógica de processamento
-      console.log("AnalyticsContext - Processando com mapeamento:", columnMapping);
-      
       // Agrupar dados por mês
       const groupedData = rawData.reduce((acc, curr) => {
         try {
@@ -211,16 +200,13 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           
           return acc;
         } catch (err) {
-          console.warn("Erro ao processar linha:", curr, err);
           return acc;
         }
       }, {} as Record<string, { customers: Set<string>, totalValue: number }>);
 
-      console.log("AnalyticsContext - Dados agrupados:", groupedData);
-
       // Converter para formato de cohort
       const processedCohortData: CohortData[] = Object.entries(groupedData)
-        .sort(([a], [b]) => a.localeCompare(b)) // Ordenar por mês
+        .sort(([a], [b]) => a.localeCompare(b))
         .map(([month, data]) => ({
           month,
           initialCustomers: data.customers.size,
@@ -228,11 +214,10 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           retentionRates: calculateRetentionRates(month, data.customers, groupedData)
         }));
 
-      console.log("AnalyticsContext - Cohort data processada:", processedCohortData);
       setCohortData(processedCohortData);
 
     } catch (error) {
-      console.error("AnalyticsContext - Erro no processamento:", error);
+      throw error;
     }
   };
 
@@ -263,25 +248,12 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    console.log("AnalyticsContext - Verificando condições para projeções:", {
-      hasCohortData: cohortData.length > 0,
-      cohortDataLength: cohortData.length,
-      cac: financialMetrics.cac,
-      margin: financialMetrics.margin
-    });
-
     if (cohortData.length > 0 && financialMetrics.cac > 0) {
-      console.log("AnalyticsContext - Dados para cálculo:", {
-        cohortData: cohortData,
-        financialMetrics: financialMetrics
-      });
-
       try {
         const calculatedProjections = calculateProjections(cohortData, financialMetrics);
-        console.log("AnalyticsContext - Projeções calculadas:", calculatedProjections);
         setProjections(calculatedProjections);
       } catch (error) {
-        console.error("AnalyticsContext - Erro ao calcular projeções:", error);
+        throw error;
       }
     }
   }, [cohortData, financialMetrics]);

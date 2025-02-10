@@ -9,14 +9,6 @@ export default function Visualization() {
   const [activeTab, setActiveTab] = useState<'cohort' | 'projections'>('cohort');
   const { cohortData, projections } = useAnalytics();
 
-  console.log("Visualization - Estado atual:", {
-    activeTab,
-    hasCohortData: cohortData.length > 0,
-    hasProjections: projections.length > 0,
-    cohortDataLength: cohortData.length,
-    projectionsLength: projections.length
-  });
-
   return (
     <div className="max-w-7xl mx-auto">
       {/* Tabs */}

@@ -12,6 +12,7 @@ export default function ColumnMapping() {
     purchaseValue: '',
   });
   const [autoSelectedColumns, setAutoSelectedColumns] = useState<string[]>([]);
+  const [availableColumns, setAvailableColumns] = useState<string[]>([]);
 
   // Carregar mapeamento salvo do localStorage ao montar o componente
   useEffect(() => {
@@ -63,15 +64,13 @@ export default function ColumnMapping() {
     }
   }, [rawData]);
 
-  // Log inicial dos dados disponíveis
   useEffect(() => {
-    console.log("ColumnMapping - Dados brutos disponíveis:", rawData.length);
-    console.log("ColumnMapping - Primeira linha:", rawData[0]);
+    if (!rawData || rawData.length === 0) return;
+    
+    const firstRow = rawData[0];
+    const columns = Object.keys(firstRow);
+    setAvailableColumns(columns);
   }, [rawData]);
-
-  // Obter todas as colunas disponíveis do arquivo
-  const availableColumns = Object.keys(rawData[0] || {});
-  console.log("ColumnMapping - Colunas disponíveis:", availableColumns);
 
   // Atualizar o mapeamento quando uma coluna é selecionada
   const handleColumnSelect = (field: keyof IColumnMapping, column: string) => {

@@ -17,10 +17,6 @@ export default function CohortRetentionChart() {
   const { cohortData } = useAnalytics();
 
   useEffect(() => {
-    console.log("CohortRetentionChart - Dados recebidos:", {
-      cohortDataLength: cohortData.length,
-      firstCohort: cohortData[0]
-    });
   }, [cohortData]);
 
   // Transformar dados para o formato do gráfico
@@ -29,7 +25,6 @@ export default function CohortRetentionChart() {
       month: cohort.month,
       ...cohort.retentionRates,
     };
-    console.log("CohortRetentionChart - Dados transformados:", transformed);
     return transformed;
   });
 

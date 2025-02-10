@@ -16,10 +16,8 @@ export default function DataUpload() {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log("Arquivo selecionado:", file);
     
     if (!file) {
-      console.log("Nenhum arquivo selecionado");
       return;
     }
 
@@ -28,20 +26,10 @@ export default function DataUpload() {
     setFileName(file.name);
 
     try {
-      console.log("Iniciando leitura do arquivo");
       const data = await readExcelFile(file);
-      console.log("Dados lidos do arquivo:", data);
-
-      // Processar e armazenar métricas
       await AnalyticsService.processAndStore(data);
-      
-      // Continuar com o upload normal
       uploadData(data);
-      
-      // Não vamos mudar de etapa automaticamente
-      console.log("Upload concluído com sucesso");
     } catch (err) {
-      console.error("Erro durante o upload:", err);
       setError(err instanceof Error ? err.message : "Erro ao processar arquivo");
       setFileName(null);
     } finally {
@@ -55,27 +43,22 @@ export default function DataUpload() {
 
       reader.onload = (e) => {
         try {
-          console.log("Arquivo carregado, iniciando parse");
           const data = e.target?.result;
           const workbook = XLSX.read(data, { type: 'binary' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
           
-          console.log("Parse concluído, dados convertidos:", jsonData);
           resolve(jsonData as RawUploadData[]);
         } catch (err) {
-          console.error("Erro ao ler arquivo Excel:", err);
           reject(new Error("Erro ao ler arquivo Excel"));
         }
       };
 
       reader.onerror = () => {
-        console.error("Erro na leitura do arquivo");
         reject(new Error("Erro ao ler arquivo"));
       };
 
-      console.log("Iniciando leitura do arquivo como binary string");
       reader.readAsBinaryString(file);
     });
   };
@@ -140,7 +123,6 @@ export default function DataUpload() {
   // Função para ir para próxima etapa
   const handleNext = () => {
     if (canProceedToNext) {
-      console.log("Avançando para a próxima etapa");
       setCurrentStep('mapping');
     }
   };

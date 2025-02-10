@@ -9,7 +9,6 @@ export function calculateProjections(
   
   // Análise dos dados históricos
   const historicalMetrics = analyzeHistoricalData(cohortData);
-  console.log("Métricas históricas:", historicalMetrics);
 
   // Inicialização
   let activeCustomers = getTotalCurrentCustomers(cohortData);
@@ -180,4 +179,66 @@ function calculateLTV(
   
   // LTV = Ticket Médio * Margem * (1 / (1 - Taxa de Retenção))
   return averageTicket * margin * (1 / (1 - retentionRate));
+}
+
+export function calculateHistoricalMetrics(data: any[]) {
+    // ... existing code ...
+    return historicalMetrics;
+}
+
+export function calculateAggregatedMetrics(
+  projections: MonthlyProjection[],
+  financialMetrics: FinancialMetrics
+) {
+  if (!projections.length) {
+    return {
+      totalRevenue: 0,
+      totalCost: 0,
+      totalProfit: 0,
+      averageROI: 0,
+      averageMargin: 0,
+      totalCustomers: 0,
+      customerLifetimeValue: 0,
+      paybackPeriod: 0,
+    };
+  }
+
+  const aggregated = projections.reduce(
+    (acc, curr) => {
+      acc.totalRevenue += curr.revenue;
+      acc.totalCost += curr.totalCost || (curr.acquisitionCost + curr.monetizationCost);
+      acc.totalProfit += curr.profit;
+      acc.roiSum += curr.roi;
+      acc.marginSum += curr.margin || (curr.profit / curr.revenue) * 100;
+      return acc;
+    },
+    { totalRevenue: 0, totalCost: 0, totalProfit: 0, roiSum: 0, marginSum: 0 }
+  );
+
+  // Calcular métricas finais
+  const averageROI = aggregated.roiSum / projections.length;
+  const averageMargin = aggregated.marginSum / projections.length;
+  const totalCustomers = projections[projections.length - 1].totalCustomers;
+
+  // Calcular LTV (Customer Lifetime Value)
+  const averageRevenuePerCustomer = aggregated.totalRevenue / totalCustomers;
+  const customerLifetimeValue = averageRevenuePerCustomer * (financialMetrics.margin || 0.3);
+
+  // Calcular período de payback (em meses)
+  let cumulativeProfit = 0;
+  const paybackPeriod = projections.findIndex(p => {
+    cumulativeProfit += p.profit;
+    return cumulativeProfit >= 0;
+  }) + 1;
+
+  return {
+    totalRevenue: aggregated.totalRevenue,
+    totalCost: aggregated.totalCost,
+    totalProfit: aggregated.totalProfit,
+    averageROI,
+    averageMargin,
+    totalCustomers,
+    customerLifetimeValue,
+    paybackPeriod: paybackPeriod || projections.length, // Se não encontrar, retorna o período total
+  };
 } 

@@ -14,21 +14,14 @@ export default function AdditionalData() {
     columnMapping 
   } = useAnalytics();
 
-  useEffect(() => {
-    console.log("AdditionalData - Estado inicial:", {
-      rawData: rawData.length,
-      columnMapping,
-      financialMetrics
-    });
-  }, []);
-
   const [formData, setFormData] = useState<FinancialMetrics>(financialMetrics);
 
   const handleInputChange = (field: keyof FinancialMetrics, value: string) => {
     const numValue = parseFloat(value) || 0;
-    console.log(`AdditionalData - Atualizando ${field}:`, numValue);
-    const newData = { ...formData, [field]: numValue };
-    setFormData(newData);
+    setFormData(prev => ({
+      ...prev,
+      [field]: numValue
+    }));
     updateFinancialMetrics({ [field]: numValue });
   };
 

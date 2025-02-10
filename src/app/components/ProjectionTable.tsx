@@ -1,117 +1,178 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAnalytics } from "@/lib/contexts/AnalyticsContext";
 import { generateGrowthProjections } from "@/lib/services/growthProjectionService";
 import { SaleData } from "@/lib/types/growthProjection";
 import { formatCurrency } from "@/lib/utils/format";
+import { CohortData } from "@/lib/types/cohort";
 
 export default function ProjectionTable() {
-  const { rawData, financialMetrics, cohortData } = useAnalytics();
+  const { rawData, financialMetrics, cohortData, updateFinancialMetrics } = useAnalytics();
 
-  // Debug: Vamos ver o que estamos recebendo
-  console.log('Raw Data:', rawData);
-  console.log('Financial Metrics:', financialMetrics);
-  console.log('Cohort Data:', cohortData);
+  // Estado local para os parâmetros editáveis
+  const [params, setParams] = useState({
+    monthlyInvestment: financialMetrics.monthlyInvestment,
+    cac: financialMetrics.cac,
+    cpv: financialMetrics.cpv,
+    margin: financialMetrics.margin,
+  });
+
+  // Estado para as projeções
+  const [projections, setProjections] = useState<any[]>([]);
+  const [retentionRates, setRetentionRates] = useState<number[]>([]);
+
+  // Novo estado para o multiplicador de retenção
+  const [retentionMultiplier, setRetentionMultiplier] = useState(1); // 1 = 100% da taxa atual
+
+  // Função para atualizar um parâmetro específico
+  const handleParamChange = (param: string, value: string) => {
+    const numValue = value === '' ? 0 : Number(value);
+    setParams(prev => ({ ...prev, [param]: numValue }));
+  };
+
+  // Efeito para recalcular projeções quando os parâmetros mudam
+  useEffect(() => {
+    if (!rawData || rawData.length === 0) return;
+
+    const sales: SaleData[] = rawData.map((item: any) => ({
+      id: item.cpf || item.id || item.customer_id,
+      saleDate: item.data_compra || item.date || item.purchase_date,
+      saleValue: Number(item.valor_compra || item.value || item.purchase_value),
+    }));
+
+    const growthParams = {
+      ...params,
+      projectionMonths: 12,
+    };
+
+    if (cohortData) {
+      // Extrair taxas base de retenção
+      const baseRates = extractRetentionRates(cohortData);
+      // Aplicar multiplicador
+      const adjustedRates = baseRates.map(rate => rate * retentionMultiplier);
+      setRetentionRates(adjustedRates);
+      
+      // Gerar projeções com taxas ajustadas
+      const newProjections = generateGrowthProjections(sales, growthParams, cohortData, adjustedRates);
+      setProjections(newProjections);
+    }
+  }, [params, rawData, cohortData, retentionMultiplier]);
 
   // Verificações de dados
   if (!rawData || rawData.length === 0) {
     return <div className="p-4 text-red-500">Nenhum dado disponível para projeções.</div>;
   }
 
-  if (!financialMetrics || !financialMetrics.cac || !financialMetrics.monthlyInvestment || !financialMetrics.cpv || !financialMetrics.margin) {
-    return (
-      <div className="p-4 text-red-500">
-        Parâmetros financeiros insuficientes. Certifique-se de preencher:
-        <ul className="list-disc ml-4 mt-2">
-          <li>CAC (Custo de Aquisição de Cliente)</li>
-          <li>Investimento Mensal</li>
-          <li>CPV (Custo por Venda)</li>
-          <li>Margem de Contribuição</li>
-        </ul>
-      </div>
-    );
-  }
-
-  // Converter os dados brutos para o formato SaleData
-  const sales: SaleData[] = rawData.map((item: any) => ({
-    id: item.cpf || item.id || item.customer_id, // Tentar diferentes campos possíveis
-    saleDate: item.data_compra || item.date || item.purchase_date,
-    saleValue: Number(item.valor_compra || item.value || item.purchase_value),
-  }));
-
-  // Debug: Vamos ver os dados convertidos
-  console.log('Converted Sales Data:', sales);
-
-  // Montar os parâmetros para a projeção de crescimento
-  const growthParams = {
-    monthlyInvestment: Number(financialMetrics.monthlyInvestment),
-    cac: Number(financialMetrics.cac),
-    cpv: Number(financialMetrics.cpv),
-    margin: Number(financialMetrics.margin),
-    projectionMonths: 12,
-  };
-
-  // Debug: Vamos ver os parâmetros
-  console.log('Growth Params:', growthParams);
-
-  // Gerar as projeções passando cohortData
-  const projections = generateGrowthProjections(sales, growthParams, cohortData);
-
-  // Debug: Vamos ver as projeções geradas
-  console.log('Generated Projections:', projections);
-
-  // Extrair taxas de retenção do cohortData
-  const retentionRates = cohortData ? extractRetentionRates(cohortData) : [];
-
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-lg shadow-md p-4">
         <h3 className="text-lg font-semibold mb-4">Parâmetros Utilizados</h3>
         
-        {/* Parâmetros Financeiros */}
+        {/* Parâmetros Financeiros Editáveis */}
         <div className="mb-6">
           <h4 className="text-sm font-medium text-gray-700 mb-2">Parâmetros Financeiros</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <span className="text-sm text-gray-500">CAC:</span>
-              <p className="font-medium">{formatCurrency(growthParams.cac)}</p>
+              <label className="block text-sm text-gray-500">CAC:</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">R$</span>
+                </div>
+                <input
+                  type="number"
+                  value={params.cac}
+                  onChange={(e) => handleParamChange('cac', e.target.value)}
+                  className="focus:ring-green-500 focus:border-green-500 block w-full pl-10 pr-4 sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
             </div>
             <div>
-              <span className="text-sm text-gray-500">Investimento Mensal:</span>
-              <p className="font-medium">{formatCurrency(growthParams.monthlyInvestment)}</p>
+              <label className="block text-sm text-gray-500">Investimento Mensal:</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">R$</span>
+                </div>
+                <input
+                  type="number"
+                  value={params.monthlyInvestment}
+                  onChange={(e) => handleParamChange('monthlyInvestment', e.target.value)}
+                  className="focus:ring-green-500 focus:border-green-500 block w-full pl-10 pr-4 sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
             </div>
             <div>
-              <span className="text-sm text-gray-500">CPV:</span>
-              <p className="font-medium">{formatCurrency(growthParams.cpv)}</p>
+              <label className="block text-sm text-gray-500">CPV:</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">R$</span>
+                </div>
+                <input
+                  type="number"
+                  value={params.cpv}
+                  onChange={(e) => handleParamChange('cpv', e.target.value)}
+                  className="focus:ring-green-500 focus:border-green-500 block w-full pl-10 pr-4 sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
             </div>
             <div>
-              <span className="text-sm text-gray-500">Margem:</span>
-              <p className="font-medium">{(growthParams.margin * 100).toFixed(1)}%</p>
+              <label className="block text-sm text-gray-500">Margem (%):</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <input
+                  type="number"
+                  value={params.margin * 100}
+                  onChange={(e) => handleParamChange('margin', (Number(e.target.value) / 100).toString())}
+                  min="0"
+                  max="100"
+                  className="focus:ring-green-500 focus:border-green-500 block w-full pr-4 sm:text-sm border-gray-300 rounded-md"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">%</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Taxas de Retenção */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Taxas de Retenção Históricas</h4>
+        {/* Taxas de Retenção com Ajuste */}
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="mb-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Ajuste de Retenção</h4>
+            <div className="flex items-center space-x-4">
+              <input
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.1"
+                value={retentionMultiplier}
+                onChange={(e) => setRetentionMultiplier(Number(e.target.value))}
+                className="w-64"
+              />
+              <span className="text-sm text-gray-600">
+                {(retentionMultiplier * 100).toFixed(0)}% da taxa atual
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Ajuste o multiplicador para simular cenários de retenção (50% a 200% da taxa atual)
+            </p>
+          </div>
+
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Taxas de Retenção Ajustadas</h4>
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             {retentionRates.map((rate, index) => (
-              <div key={index}>
+              <div key={index} className="relative">
                 <span className="text-sm text-gray-500">Mês {index + 1}:</span>
                 <p className={`font-medium ${rate > 0 ? 'text-green-600' : 'text-gray-600'}`}>
                   {rate.toFixed(1)}%
                 </p>
+                <p className="text-xs text-gray-400">
+                  Base: {(rate / retentionMultiplier).toFixed(1)}%
+                </p>
               </div>
             ))}
-            {retentionRates.length === 0 && (
-              <div className="col-span-full text-yellow-600">
-                Nenhuma taxa de retenção histórica disponível
-              </div>
-            )}
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            * Taxas calculadas com base na média de todos os períodos históricos
+            * Taxas base calculadas com média histórica, ajustadas pelo multiplicador
           </p>
         </div>
       </div>

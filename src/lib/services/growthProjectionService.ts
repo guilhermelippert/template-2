@@ -144,7 +144,8 @@ function extractRetentionRates(cohortData: CohortData[]): number[] {
 export function generateGrowthProjections(
   salesData: SaleData[],
   growthParams: GrowthProjectionParams,
-  cohortData?: CohortData[] // Adicionamos cohortData como parâmetro opcional
+  cohortData?: CohortData[],
+  adjustedRetentionRates?: number[]
 ): MonthlyGrowthProjection[] {
   const projectionMonths = growthParams.projectionMonths || 12;
   const projections: MonthlyGrowthProjection[] = [];
@@ -153,8 +154,9 @@ export function generateGrowthProjections(
   const totalRevenue = salesData.reduce((sum, sale) => sum + sale.saleValue, 0);
   const averageTicket = totalRevenue / salesData.length;
   
-  // Extrai taxas de retenção do cohortData se disponível
-  const retentionRates = cohortData ? extractRetentionRates(cohortData) : [];
+  // Usar taxas ajustadas se fornecidas, caso contrário calcular do cohortData
+  const retentionRates = adjustedRetentionRates || 
+    (cohortData ? extractRetentionRates(cohortData) : []);
   console.log('Retention Rates:', retentionRates); // Debug
   
   // Array para manter histórico de coortes

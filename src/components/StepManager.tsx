@@ -53,7 +53,7 @@ function Steps({ currentStep }: { currentStep: AnalysisStep }) {
     { id: 'upload' as AnalysisStep, title: 'Upload de Dados' },
     { id: 'mapping' as AnalysisStep, title: 'Mapeamento' },
     { id: 'additional' as AnalysisStep, title: 'Plano de Growth' },
-    { id: 'visualization' as AnalysisStep, title: 'Projeções' },
+    { id: 'visualization' as AnalysisStep, title: 'Análises' },
   ];
 
   return (

@@ -20,3 +20,188 @@ There are some pre-configured APIs in this template that can be used but only if
 - Deepgram
   - src/app/api/deepgram has transcribe-audio/route.ts which is a simple API that returns the Deepgram API key to be used in the client side to transcribe audio in real-time.
   - src/lib/contexts has a DeepgramContext.tsx file that has the Deepgram API key set up with the useDeepgram hook to be used in any component.
+
+
+Sobre a cor do nosso sistema:
+- Será majoritariamente preto e branco com poucas cores secundárias.
+- O fundo será uma cor mais clara, próxima ao cinza.
+- O texto será preto.
+- O destaque das cores será feito por meio de bordas verdes.
+- O sistema deve ser responsivo para todos os dispositivos.
+- O sistema deve demonstrar números positivos em verde ou preto e números negativos em vermelho.
+
+
+Below is the complete project description:
+"1. Passo a Passo do Sistema (Fluxo e Telas)
+
+1.1 Tela 1: Upload / Integração de Dados
+
+Objetivo:
+
+Permitir ao usuário importar dados de compras (dos últimos meses) de forma manual (via upload .xlsx/.csv) ou via integração direta com a plataforma de e-commerce.
+
+Principais Funcionalidades:
+
+Botão para “Fazer Upload” de arquivos.
+
+Campo para configurar integração (API key, credenciais).
+
+Validação básica do formato do arquivo (colunas mínimas obrigatórias).
+
+1.2 Tela 2: Matching de Dados & Validação
+
+Objetivo:
+
+Fazer correspondência (matching) das colunas do arquivo ou da API com os campos do sistema (CPF, valor de compra, data da compra etc.).
+
+Validar dados faltantes e dar opções de corrigir manualmente.
+
+Principais Funcionalidades:
+
+Mapear colunas detectadas no arquivo (ex.: “cpf_comprador” → CPF).
+
+Mostrar inconsistências (por exemplo, CPFs duplicados ou datas inválidas).
+
+Possibilidade de corrigir manualmente ou excluir registros com erro grave.
+
+1.3 Tela 3: Preenchimento de Dados Adicionais
+
+Objetivo:
+
+Capturar informações que não vieram no arquivo ou na integração, mas que são necessárias para os cálculos (ex.: CAC, CPV, margem média, ticket médio adicional, etc.).
+
+Distinguir investimento em aquisição vs. monetização.
+
+Principais Funcionalidades:
+
+Formulário para inserção de:
+
+CAC (Custo de Aquisição de Cliente)
+
+CPV (Custo por Visualização ou Visita)
+
+Ticket Médio (caso não possa ser calculado diretamente)
+
+Margem de Contribuição / Margem Líquida (se não disponível, usar média do setor ou valor estimado)
+
+Investimento em aquisição e em monetização, separados.
+
+Validação de intervalos (evitar valores negativos, por exemplo).
+
+1.4 Tela 4: Geração de Cohort Retention
+
+Objetivo:
+
+Processar os dados de compra para criar coortes (grupos de clientes que compraram em determinado período).
+
+Exibir a taxa de retenção mês a mês ou período a período.
+
+Principais Funcionalidades:
+
+Visualizar tabela de coortes:
+
+Mês inicial de compra → porcentagem de retorno nos meses subsequentes.
+
+Gráfico com curva de retenção ao longo do tempo.
+
+Possibilidade de filtrar por canal de aquisição, faixa de ticket, etc. (opcional).
+
+1.5 Tela 5: Visão de Investimentos e Projeções de Longo Prazo
+
+Objetivo:
+
+Apresentar uma projeção de receita, lucro, ROI, ROAS etc., com base no histórico de retenção e nas variáveis de aquisição/monetização.
+
+Mostrar impacto financeiro se continuar investindo no mesmo ritmo.
+
+Principais Funcionalidades:
+
+Tabela mês a mês com projeções de:
+
+Novos clientes estimados (com base em CAC e investimento)
+
+Clientes retidos (coorte)
+
+Receita mensal (baseada em ticket e clientes ativos)
+
+Custos de aquisição e monetização mensais
+
+KPIs (ROI, ROAS, Margem)
+
+Gráficos comparativos (ex.: receita vs. custo, retenção cumulativa, etc.).
+
+1.6 Tela 6: Ajuste de Variáveis (Simulador de Análise de Sensibilidade)
+
+Objetivo:
+
+Permitir ao usuário mudar variáveis (CAC, CPV, taxa de retenção, investimento mensal, ticket médio etc.) para ver os efeitos no resultado final em tempo real.
+
+Principais Funcionalidades:
+
+Sliders ou campos numéricos para alterar parâmetros.
+
+Recalcular projeções e KPIs instantaneamente.
+
+Exibir gráficos de cenários lado a lado (ex.: “cenário atual” vs. “cenário otimista” vs. “cenário conservador”).
+
+1.7 Tela 7: Relatório Final & AI Advisor
+
+Objetivo:
+
+Consolidar os dados e projeções em um relatório.
+
+Usar uma IA simples (ou motor de regras) para avaliar os indicadores e sugerir melhorias (ex.: “Seu CAC está muito alto, reduza investimento em X ou melhore a conversão em Y”).
+
+Principais Funcionalidades:
+
+Resumo final: receita projetada, ROI, retenção, etc.
+
+“Dicas de Otimização” geradas pela IA:
+
+Pode ser baseada em regras (ex.: “se CAC > valor_médio, então sugerir…”) ou um modelo mais avançado.
+
+Exportar relatório em PDF/Excel, caso necessário.
+
+2. Dados Necessários para as Previsões e Análises
+
+Identificação do Cliente
+
+CPF (ou e-mail) para agrupar compras e formar coortes.
+
+Data da Compra
+
+Para classificar coortes por período (ex.: mês de primeira compra).
+
+Valor da Compra
+
+Usado para calcular receita, ticket médio e margem.
+
+Investimento em Aquisição
+
+Montante total gasto por período para atrair novos clientes.
+
+Pode vir de outra base ou ser informado manualmente.
+
+CAC (Custo de Aquisição de Cliente) e/ou CPV
+
+Se não for extraído diretamente, deve ser inserido ou estimado.
+
+Margem de Contribuição / Margem Líquida
+
+Percentual ou valor que identifica quanto de cada venda fica como lucro (sem contar custos fixos, ou contando, dependendo do modelo).
+
+Se não for fornecido, usar média do setor/estimativa.
+
+Parâmetros de Retenção (caso queira simular)
+
+Taxas de retorno (ex.: 40% retornam após 1 mês, 25% após 2 meses etc.), se quiser projeção futura.
+
+Ou calculados automaticamente a partir do histórico do e-commerce.
+
+Outras Variáveis (opcionais)
+
+Canal de marketing (para análises segmentadas).
+
+Custos de monetização (e-mail marketing, remarketing etc.).
+
+Crescimento de investimento mês a mês (para projeções)."

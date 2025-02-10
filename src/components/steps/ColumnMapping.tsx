@@ -11,6 +11,57 @@ export default function ColumnMapping() {
     purchaseDate: '',
     purchaseValue: '',
   });
+  const [autoSelectedColumns, setAutoSelectedColumns] = useState<string[]>([]);
+
+  // Carregar mapeamento salvo do localStorage ao montar o componente
+  useEffect(() => {
+    const savedMapping = localStorage.getItem('columnMapping');
+    if (savedMapping) {
+      const parsedMapping = JSON.parse(savedMapping);
+      setMapping(parsedMapping);
+      updateColumnMapping(parsedMapping);
+    }
+  }, []);
+
+  // Salvar mapeamento no localStorage quando atualizado
+  useEffect(() => {
+    localStorage.setItem('columnMapping', JSON.stringify(mapping));
+  }, [mapping]);
+
+  // Tentar fazer o mapeamento automático quando os dados brutos estiverem disponíveis
+  useEffect(() => {
+    if (rawData.length > 0) {
+      const columns = Object.keys(rawData[0] || {});
+      const autoMapping: IColumnMapping = { ...mapping };
+      const autoSelected: string[] = [];
+
+      // Mapeamento de possíveis nomes de coluna para campos
+      const columnMatches = {
+        cpf: ['cpf', 'documento', 'documento_cliente', 'cpf_cliente'],
+        purchaseDate: ['data', 'data_compra', 'purchase_date', 'data_pedido'],
+        purchaseValue: ['valor', 'value', 'valor_compra', 'purchase_value', 'total'],
+      };
+
+      // Verificar cada campo para correspondência automática
+      Object.entries(columnMatches).forEach(([field, matches]) => {
+        const foundColumn = columns.find(col => 
+          matches.includes(col.toLowerCase()) || 
+          matches.some(match => col.toLowerCase().includes(match))
+        );
+
+        if (foundColumn && !mapping[field as keyof IColumnMapping]) {
+          autoMapping[field as keyof IColumnMapping] = foundColumn;
+          autoSelected.push(foundColumn);
+        }
+      });
+
+      if (autoSelected.length > 0) {
+        setMapping(autoMapping);
+        updateColumnMapping(autoMapping);
+        setAutoSelectedColumns(autoSelected);
+      }
+    }
+  }, [rawData]);
 
   // Log inicial dos dados disponíveis
   useEffect(() => {
@@ -24,7 +75,6 @@ export default function ColumnMapping() {
 
   // Atualizar o mapeamento quando uma coluna é selecionada
   const handleColumnSelect = (field: keyof IColumnMapping, column: string) => {
-    console.log(`ColumnMapping - Mapeando ${field} para coluna ${column}`);
     const newMapping = { ...mapping, [field]: column };
     setMapping(newMapping);
     updateColumnMapping(newMapping);
@@ -41,18 +91,25 @@ export default function ColumnMapping() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               CPF do Cliente
             </label>
-            <select
-              value={mapping.cpf}
-              onChange={(e) => handleColumnSelect('cpf', e.target.value)}
-              className="w-full border rounded-md py-2 px-3"
-            >
-              <option value="">Selecione a coluna</option>
-              {availableColumns.map((column) => (
-                <option key={column} value={column}>
-                  {column}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                value={mapping.cpf}
+                onChange={(e) => handleColumnSelect('cpf', e.target.value)}
+                className="w-full border rounded-md py-2 px-3"
+              >
+                <option value="">Selecione a coluna</option>
+                {availableColumns.map((column) => (
+                  <option key={column} value={column}>
+                    {column}
+                  </option>
+                ))}
+              </select>
+              {autoSelectedColumns.includes(mapping.cpf) && (
+                <span className="text-sm text-green-600 whitespace-nowrap">
+                  ✓ Seleção automática
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Campo Data da Compra */}
@@ -60,18 +117,25 @@ export default function ColumnMapping() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Data da Compra
             </label>
-            <select
-              value={mapping.purchaseDate}
-              onChange={(e) => handleColumnSelect('purchaseDate', e.target.value)}
-              className="w-full border rounded-md py-2 px-3"
-            >
-              <option value="">Selecione a coluna</option>
-              {availableColumns.map((column) => (
-                <option key={column} value={column}>
-                  {column}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                value={mapping.purchaseDate}
+                onChange={(e) => handleColumnSelect('purchaseDate', e.target.value)}
+                className="w-full border rounded-md py-2 px-3"
+              >
+                <option value="">Selecione a coluna</option>
+                {availableColumns.map((column) => (
+                  <option key={column} value={column}>
+                    {column}
+                  </option>
+                ))}
+              </select>
+              {autoSelectedColumns.includes(mapping.purchaseDate) && (
+                <span className="text-sm text-green-600 whitespace-nowrap">
+                  ✓ Seleção automática
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Campo Valor da Compra */}
@@ -79,18 +143,25 @@ export default function ColumnMapping() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Valor da Compra
             </label>
-            <select
-              value={mapping.purchaseValue}
-              onChange={(e) => handleColumnSelect('purchaseValue', e.target.value)}
-              className="w-full border rounded-md py-2 px-3"
-            >
-              <option value="">Selecione a coluna</option>
-              {availableColumns.map((column) => (
-                <option key={column} value={column}>
-                  {column}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                value={mapping.purchaseValue}
+                onChange={(e) => handleColumnSelect('purchaseValue', e.target.value)}
+                className="w-full border rounded-md py-2 px-3"
+              >
+                <option value="">Selecione a coluna</option>
+                {availableColumns.map((column) => (
+                  <option key={column} value={column}>
+                    {column}
+                  </option>
+                ))}
+              </select>
+              {autoSelectedColumns.includes(mapping.purchaseValue) && (
+                <span className="text-sm text-green-600 whitespace-nowrap">
+                  ✓ Seleção automática
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Botões de Navegação */}

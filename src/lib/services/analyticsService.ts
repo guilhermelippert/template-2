@@ -35,35 +35,69 @@ export class AnalyticsService {
 
     // Processar dados brutos
     rawData.forEach(row => {
-      const purchaseDate = new Date(row.data_compra);
-      const monthKey = `${purchaseDate.getFullYear()}-${String(purchaseDate.getMonth() + 1).padStart(2, '0')}`;
-      const purchaseValue = Number(row.valor_compra);
-      const customerKey = row.cpf;
+      // Corrigir a criação da data
+      let purchaseDate: Date;
+      
+      try {
+        // Verifica se já é um objeto Date
+        if (row.data_compra instanceof Date) {
+          purchaseDate = row.data_compra;
+        } 
+        // Se for timestamp numérico
+        else if (typeof row.data_compra === 'number') {
+          purchaseDate = new Date(row.data_compra);
+        }
+        // Se for string
+        else if (typeof row.data_compra === 'string') {
+          purchaseDate = new Date(row.data_compra.split('T')[0]);
+        }
+        // Caso não seja nenhum dos tipos acima
+        else {
+          purchaseDate = new Date(row.data_compra);
+        }
 
-      // Inicializar estruturas do mês se necessário
-      if (!monthlyCustomers[monthKey]) {
-        monthlyCustomers[monthKey] = new Set();
-        monthlyNewCustomers[monthKey] = new Set();
-        metrics.monthlyMetrics[monthKey] = {
-          newCustomers: 0,
-          revenue: 0,
-          averageTicket: 0,
-          repeatCustomers: 0
-        };
+        // Garantir que a data é válida
+        if (isNaN(purchaseDate.getTime())) {
+          console.error('Data inválida:', row.data_compra);
+          return; // Pula este registro
+        }
+
+        // Formatar o mês corretamente
+        const year = purchaseDate.getFullYear();
+        const month = String(purchaseDate.getMonth() + 1).padStart(2, '0');
+        const monthKey = `${year}-${month}`; // Formato YYYY-MM
+
+        const purchaseValue = Number(row.valor_compra);
+        const customerKey = row.cpf;
+
+        // Inicializar estruturas do mês se necessário
+        if (!monthlyCustomers[monthKey]) {
+          monthlyCustomers[monthKey] = new Set();
+          monthlyNewCustomers[monthKey] = new Set();
+          metrics.monthlyMetrics[monthKey] = {
+            newCustomers: 0,
+            revenue: 0,
+            averageTicket: 0,
+            repeatCustomers: 0
+          };
+        }
+
+        // Atualizar métricas mensais
+        monthlyCustomers[monthKey].add(customerKey);
+        metrics.monthlyMetrics[monthKey].revenue += purchaseValue;
+
+        // Verificar se é cliente novo
+        if (!uniqueCustomers.has(customerKey)) {
+          monthlyNewCustomers[monthKey].add(customerKey);
+        }
+
+        // Atualizar métricas globais
+        uniqueCustomers.add(customerKey);
+        metrics.totalRevenue += purchaseValue;
+      } catch (error) {
+        console.error('Erro ao processar data:', row.data_compra, error);
+        return; // Pula este registro em caso de erro
       }
-
-      // Atualizar métricas mensais
-      monthlyCustomers[monthKey].add(customerKey);
-      metrics.monthlyMetrics[monthKey].revenue += purchaseValue;
-
-      // Verificar se é cliente novo
-      if (!uniqueCustomers.has(customerKey)) {
-        monthlyNewCustomers[monthKey].add(customerKey);
-      }
-
-      // Atualizar métricas globais
-      uniqueCustomers.add(customerKey);
-      metrics.totalRevenue += purchaseValue;
     });
 
     // Calcular métricas finais
@@ -85,7 +119,13 @@ export class AnalyticsService {
   }
 
   private static calculateRetentionRates(monthlyCustomers: { [key: string]: Set<string> }) {
-    const months = Object.keys(monthlyCustomers).sort();
+    // Garantir que os meses estão ordenados corretamente
+    const months = Object.keys(monthlyCustomers).sort((a, b) => {
+      const dateA = new Date(a + '-01');
+      const dateB = new Date(b + '-01');
+      return dateA.getTime() - dateB.getTime();
+    });
+
     const retentionRates: AnalyticsMetrics['retentionRates'] = {};
 
     months.forEach((baseMonth, index) => {

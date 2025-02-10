@@ -79,36 +79,6 @@ export default function MetricsSummary() {
             </div>
           ))}
       </div>
-
-      <div className="mt-6">
-        <h3 className="text-lg font-semibold mb-3">Taxas de Retenção</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Mês Base</th>
-                {['M1', 'M2', 'M3', 'M4', 'M5', 'M6'].map(month => (
-                  <th key={month} className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                    {month}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(metrics.retentionRates).map(([baseMonth, rates]) => (
-                <tr key={baseMonth} className="border-t">
-                  <td className="px-4 py-2 text-sm font-medium">{baseMonth}</td>
-                  {['M1', 'M2', 'M3', 'M4', 'M5', 'M6'].map(month => (
-                    <td key={month} className="px-4 py-2 text-sm">
-                      {rates[month] ? `${(rates[month] * 100).toFixed(1)}%` : '-'}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 } 

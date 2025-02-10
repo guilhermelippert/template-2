@@ -73,8 +73,8 @@ export interface CohortFilters {
 // Novo tipo para dados brutos do upload
 export interface RawUploadData {
   cpf: string;
-  purchaseDate: string;
-  purchaseValue: number;
+  data_compra: string | Date | number; // Aceita diferentes formatos de data
+  valor_compra: string | number; // Aceita valor como string ou número
   [key: string]: any; // Para campos adicionais que podem vir do arquivo
 }
 

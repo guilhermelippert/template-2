@@ -6,6 +6,18 @@ import { generateGrowthProjections } from "@/lib/services/growthProjectionServic
 import { SaleData } from "@/lib/types/growthProjection";
 import { formatCurrency } from "@/lib/utils/format";
 import { CohortData } from "@/lib/types/cohort";
+import { 
+  LineChart, 
+  Line, 
+  AreaChart,
+  Area,
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
 
 export default function ProjectionTable() {
   const { rawData, financialMetrics, cohortData, updateFinancialMetrics } = useAnalytics();
@@ -65,7 +77,7 @@ export default function ProjectionTable() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-md p-4">
         <h3 className="text-lg font-semibold mb-4">Parâmetros Utilizados</h3>
         
@@ -216,6 +228,142 @@ export default function ProjectionTable() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Gráficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico de Evolução de Clientes */}
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h3 className="text-lg font-semibold mb-4">Evolução da Base de Clientes</h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={projections}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="month" 
+                  tickFormatter={(value) => value.slice(5)} // Mostra apenas MM-YY
+                />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number) => [value.toLocaleString('pt-BR'), 'Clientes']}
+                  labelFormatter={(label) => `Mês: ${label}`}
+                />
+                <Legend />
+                <Area
+                  type="monotone"
+                  dataKey="newCustomers"
+                  stackId="1"
+                  name="Novos Clientes"
+                  fill="#10B981"
+                  stroke="#10B981"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="retainedCustomers"
+                  stackId="1"
+                  name="Clientes Retidos"
+                  fill="#6366F1"
+                  stroke="#6366F1"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico de Métricas Financeiras */}
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h3 className="text-lg font-semibold mb-4">Métricas Financeiras</h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={projections}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="month" 
+                  tickFormatter={(value) => value.slice(5)} // Mostra apenas MM-YY
+                />
+                <YAxis
+                  tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  formatter={(value: number) => [
+                    formatCurrency(value),
+                    value === projections[0]?.revenue ? 'Receita' :
+                    value === projections[0]?.totalCost ? 'Custos' : 'Lucro'
+                  ]}
+                  labelFormatter={(label) => `Mês: ${label}`}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  name="Receita"
+                  stroke="#10B981"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="totalCost"
+                  name="Custos"
+                  stroke="#EF4444"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="profit"
+                  name="Lucro"
+                  stroke="#6366F1"
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico de ROI e Retenção */}
+        <div className="bg-white rounded-lg shadow-md p-4 lg:col-span-2">
+          <h3 className="text-lg font-semibold mb-4">ROI e Taxa de Retenção</h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={projections}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="month" 
+                  tickFormatter={(value) => value.slice(5)}
+                />
+                <YAxis 
+                  yAxisId="left"
+                  tickFormatter={(value) => `${value.toFixed(1)}%`}
+                />
+                <YAxis 
+                  yAxisId="right" 
+                  orientation="right"
+                  tickFormatter={(value) => `${value.toFixed(1)}%`}
+                />
+                <Tooltip
+                  formatter={(value: number) => [`${value.toFixed(1)}%`, '']}
+                  labelFormatter={(label) => `Mês: ${label}`}
+                />
+                <Legend />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="roi"
+                  name="ROI"
+                  stroke="#10B981"
+                  strokeWidth={2}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="retentionRate"
+                  name="Taxa de Retenção"
+                  stroke="#6366F1"
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
     </div>
   );
